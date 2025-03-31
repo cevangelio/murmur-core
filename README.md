@@ -47,4 +47,4 @@ Edit the .env or config.yaml file to set:
 ## License
 MIT
 
-murmur-core hums quietly in the background. It never sleeps.
+_murmur-core hums quietly in the background. It never sleeps._
