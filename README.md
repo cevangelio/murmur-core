@@ -44,6 +44,10 @@ Edit the .env or config.yaml file to set:
 - Prompt behavior
 - AI model / key
 
+## Data Flow
+
+LOG_DIR → input_reader → prompt_builder + default_prompt.txt → ai_writer → formatter → MURMUR_SHELL_PATH
+
 ## License
 MIT
 
