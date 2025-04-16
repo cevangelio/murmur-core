@@ -7,8 +7,10 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from openai import OpenAI
 from core.formatter import format_markdown
-from core.chart_generator import generate_basket_pips_chart
+from core.chart_generator import generate_basket_pips_chart, slice_image_for_instagram, generate_instagram_cover
 from collections import defaultdict
+import time
+import ast
 
 load_dotenv()
 HOME = str(Path.home())
@@ -19,6 +21,9 @@ LOG_FILE_PATH = f"{HOME}/Documents/MacTrader/SkyeFX/SkyEngine/logs/blog_logs_{BL
 SAVE_DIRECTORY = f"{HOME}/Documents/MacTrader/Murmur/Core/proto_blogs/"
 DAILY_SNAPSHOT_PROMPT = f"{HOME}/Documents/MacTrader/Murmur/Core/prompts/daily_snapshot_prompt.txt"
 BASKET_PIPS_DIRECTORY = f"{HOME}/Documents/MacTrader/Murmur/Shell/astro-paper/public/assets/"
+GRAPH_IMG_PATH = f"{BASKET_PIPS_DIRECTORY}/pips_chart_{BLOG_ID}.png"
+INSTA_IMG_PATH = f"{HOME}/Downloads/instaskyengine/"
+LOGO_PATH = f"{HOME}/Documents/MacTrader/SkyeFX/SkyEngine/assets/skyefx_logo.png"
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
@@ -135,6 +140,46 @@ def extract_filtered_logs(logs):
     sorted_logs = sorted(unique_logs.values(), key=lambda x: x["timestamp"])
     return "\n".join([json.dumps(log) for log in sorted_logs])
 
+def prepare_instagram_summary(logs):
+    # If logs are strings, try to parse safely
+    raw = logs.split('\n')
+    logs = [ast.literal_eval(line) for line in raw]
+
+    # Get the highest basket summary
+    highest_basket = next(
+        (entry for entry in logs if entry["type"] == "basket_summary" and "Highest Basket" in entry.get("label", "")),
+        None
+    )
+    total_pips = highest_basket["basket_total_pips"] if highest_basket else 0
+
+    # Latest snapshot per pair
+    latest_snapshot_per_pair = {}
+    for entry in logs:
+        if entry["type"] == "snapshot":
+            pair = entry["pair"]
+            ts = entry["timestamp"]
+            if pair not in latest_snapshot_per_pair or ts > latest_snapshot_per_pair[pair]["timestamp"]:
+                latest_snapshot_per_pair[pair] = entry
+
+    # Top 3 performers by pips
+    sorted_by_pips = sorted(latest_snapshot_per_pair.values(), key=lambda x: x["pips"], reverse=True)
+    print(sorted_by_pips)
+    top_performers = [(entry['pair'],entry['pips']) for entry in sorted_by_pips[:3]]
+    # top_performers = [entry['pair'] for entry in sorted_by_pips[:3]]
+
+    # Title date based on first timestamp
+    first_ts = logs[0]["timestamp"]
+    date_obj = datetime.fromisoformat(first_ts.split("T")[0])
+    title = f"Top Movers – {date_obj.strftime('%B %d')}"
+    date_str = date_obj.strftime('%B%d').lower()
+
+    return {
+        "output_path": f"{INSTA_IMG_PATH}{date_str}_cover.png",
+        "title": title,
+        "total_pips": round(total_pips, 1),
+        "top_performers": top_performers,
+        "logo_path": LOGO_PATH
+    }
 
 
 
@@ -166,7 +211,18 @@ if __name__ == "__main__":
     prompt = create_prompt_from_log(filtered_log_text)
     pyperclip.copy(prompt)
     print(f"This is the generated prompt\n\n{prompt}\n\n")
-    generate_basket_pips_chart(LOG_FILE_PATH,f"{BASKET_PIPS_DIRECTORY}/pips_chart_{BLOG_ID}.png")
+    generate_basket_pips_chart(LOG_FILE_PATH,GRAPH_IMG_PATH)
+    time.sleep(3)
+    slice_image_for_instagram(GRAPH_IMG_PATH,INSTA_IMG_PATH)
+    for_insta_cover = prepare_instagram_summary(filtered_log_text)
+    print((for_insta_cover))
+    generate_instagram_cover(
+        for_insta_cover['output_path'],
+        for_insta_cover['title'],
+        for_insta_cover['total_pips'],
+        for_insta_cover['top_performers'],
+        for_insta_cover['logo_path']
+    )
     # output = generate_post(prompt)
     # saved_path = save_to_markdown(output, save_dir=SAVE_DIRECTORY)
 

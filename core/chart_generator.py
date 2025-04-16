@@ -6,6 +6,7 @@ import json
 from matplotlib.dates import DateFormatter
 import matplotlib.lines as mlines
 from datetime import datetime, timedelta
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 mpl.rcParams['font.family'] = 'JetBrains Mono'
 BLOG_ID = (datetime.now()-timedelta(days=1)).strftime('%B %d, %Y')
@@ -92,3 +93,74 @@ def generate_basket_pips_chart(log_file_path, output_image_path):
     plt.savefig(output_image_path)
     plt.close()
     print(f"Generated basket pips plot. Saved in {output_image_path}")
+
+def slice_image_for_instagram(input_image_path, output_dir):
+    """
+    Slices a wide image into 3 parts, pads vertically to preserve top/bottom,
+    and resizes each to 1080x1080 for Instagram.
+    """
+    img = Image.open(input_image_path)
+    width, height = img.size
+    part_width = width // 3
+
+    for i in range(3):
+        left = i * part_width
+        right = (i + 1) * part_width if i < 2 else width
+        cropped = img.crop((left, 0, right, height))
+
+        # Pad to square (vertically)
+        square_size = max(cropped.size)
+        padded = ImageOps.pad(cropped, (square_size, square_size), method=Image.BICUBIC, color=(255, 255, 255))
+
+        # Resize to Instagram square size
+        resized = padded.resize((1080, 1080), Image.LANCZOS)
+
+        output_path = Path(output_dir) / f"{Path(input_image_path).stem}_part{i+1}.png"
+        resized.save(output_path)
+        print(f"✅ Saved Instagram slice: {output_path}")
+
+
+def generate_instagram_cover(output_path, title, total_pips, top_pairs, logo_path=None):
+    # Create base image
+    img = Image.new("RGB", (1080, 1080), color="#0f0f0f")
+    draw = ImageDraw.Draw(img)
+
+    # Load fonts (JetBrains Mono preferred)
+    try:
+        title_font = ImageFont.truetype("JetBrainsMono-Bold.ttf", 70)
+        pips_font = ImageFont.truetype("JetBrainsMono-Regular.ttf", 50)
+        small_font = ImageFont.truetype("JetBrainsMono-Regular.ttf", 40)
+    except:
+        title_font = ImageFont.load_default()
+        pips_font = ImageFont.load_default()
+        small_font = ImageFont.load_default()
+
+    # Draw title
+    draw.text((60, 200), title, font=title_font, fill="white")
+
+    # Total gain
+    draw.text((60, 320), f"Total Gain: {total_pips} pips", font=pips_font, fill="#00FF88")
+
+    # Top pairs list
+    y = 520
+    for pair, gain in top_pairs:
+        text = f"{pair:<8} {gain:+} pips"
+        draw.text((60, y), text, font=small_font, fill="white")
+        y += 70
+
+    # Optional logo overlay
+    if logo_path and Path(logo_path).exists():
+        logo = Image.open(logo_path).convert("RGBA")
+        # Resize to fit (e.g., 150x150 max)
+        max_logo_size = (150, 150)
+        logo.thumbnail(max_logo_size, Image.LANCZOS)
+
+        # Paste in bottom-right with padding
+        logo_x = img.width - logo.width - 40
+        logo_y = img.height - logo.height - 40
+        img.paste(logo, (logo_x, logo_y), mask=logo)
+
+    # Save image
+    output_path = Path(output_path)
+    img.save(output_path)
+    print(f"✅ Saved Instagram cover: {output_path}")
