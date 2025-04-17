@@ -8,6 +8,7 @@ from pathlib import Path
 from openai import OpenAI
 from core.formatter import format_markdown
 from core.chart_generator import generate_basket_pips_chart, slice_image_for_instagram, generate_instagram_cover
+from core.browser_automation import run_chatgpt_blog_prompt
 from collections import defaultdict
 import time
 import ast
@@ -211,18 +212,19 @@ if __name__ == "__main__":
     prompt = create_prompt_from_log(filtered_log_text)
     pyperclip.copy(prompt)
     print(f"This is the generated prompt\n\n{prompt}\n\n")
-    generate_basket_pips_chart(LOG_FILE_PATH,GRAPH_IMG_PATH)
-    time.sleep(3)
-    slice_image_for_instagram(GRAPH_IMG_PATH,INSTA_IMG_PATH)
-    for_insta_cover = prepare_instagram_summary(filtered_log_text)
-    print((for_insta_cover))
-    generate_instagram_cover(
-        for_insta_cover['output_path'],
-        for_insta_cover['title'],
-        for_insta_cover['total_pips'],
-        for_insta_cover['top_performers'],
-        for_insta_cover['logo_path']
-    )
+    # run_chatgpt_blog_prompt(prompt=prompt)
+    # generate_basket_pips_chart(LOG_FILE_PATH,GRAPH_IMG_PATH)
+    # time.sleep(3)
+    # slice_image_for_instagram(GRAPH_IMG_PATH,INSTA_IMG_PATH)
+    # for_insta_cover = prepare_instagram_summary(filtered_log_text)
+    # print((for_insta_cover))
+    # generate_instagram_cover(
+    #     for_insta_cover['output_path'],
+    #     for_insta_cover['title'],
+    #     for_insta_cover['total_pips'],
+    #     for_insta_cover['top_performers'],
+    #     for_insta_cover['logo_path']
+    # )
     # output = generate_post(prompt)
     # saved_path = save_to_markdown(output, save_dir=SAVE_DIRECTORY)
 

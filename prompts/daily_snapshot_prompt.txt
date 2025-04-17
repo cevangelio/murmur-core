@@ -62,5 +62,6 @@ Summarize the narrative in 1–2 sentences. Include major drivers and a risk rem
 📅 *Generated from live snapshot data and macroeconomic events for {datetime.now().strftime('%B %d, %Y')}.*
 
 
-Do not wrap the title in quotes or say “Title:”. Format all output as clean markdown. Give me the final output in a downloadable markdown file. 
+Do not wrap the title in quotes or say “Title:”. Format all output as clean markdown. Give me the final output in a downloadable markdown file name "blog_post.md". Next, after generating the blog post in markdown, generate a second markdown file for twitter caption with filename "twitter_caption.md" and a third markdown file for instagram caption filenamed "instagram_caption.md". The tone should curious, exciting and inviting in the captions. I want to download all three in separate files. 
+
 Now analyze the following data and generate the full blog post:
