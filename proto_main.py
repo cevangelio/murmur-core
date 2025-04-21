@@ -6,12 +6,19 @@ from dotenv import load_dotenv
 from datetime import datetime, timedelta
 from pathlib import Path
 from openai import OpenAI
-from core.formatter import format_markdown
+from core.formatter import format_markdown, update_markdown_file
 from core.chart_generator import generate_basket_pips_chart, slice_image_for_instagram, generate_instagram_cover
-from core.browser_automation import run_chatgpt_blog_prompt
+from tools.mover import rename_and_move_blog_file
+from core.post_saver import git_commit_and_push
 from collections import defaultdict
 import time
 import ast
+from core.browser_automation import (
+    create_driver,
+    run_chatgpt_blog_prompt,
+    click_markdown_links,
+    move_latest_markdown,
+)
 
 load_dotenv()
 HOME = str(Path.home())
@@ -21,7 +28,9 @@ BLOG_ID = (datetime.now()-timedelta(days=1)).strftime('%Y-%m-%d')
 LOG_FILE_PATH = f"{HOME}/Documents/MacTrader/SkyeFX/SkyEngine/logs/blog_logs_{BLOG_ID}.log"
 SAVE_DIRECTORY = f"{HOME}/Documents/MacTrader/Murmur/Core/proto_blogs/"
 DAILY_SNAPSHOT_PROMPT = f"{HOME}/Documents/MacTrader/Murmur/Core/prompts/daily_snapshot_prompt.txt"
-BASKET_PIPS_DIRECTORY = f"{HOME}/Documents/MacTrader/Murmur/Shell/astro-paper/public/assets/"
+BLOG_DIRECTORY = f"{HOME}/Documents/MacTrader/Murmur/Shell/astro-paper/"
+BASKET_PIPS_DIRECTORY = f"{BLOG_DIRECTORY}/public/assets/"
+BLOG_COMPLETED_DIRECTORY = f"{BLOG_DIRECTORY}/src/data/blog/"
 GRAPH_IMG_PATH = f"{BASKET_PIPS_DIRECTORY}/pips_chart_{BLOG_ID}.png"
 INSTA_IMG_PATH = f"{HOME}/Downloads/instaskyengine/"
 LOGO_PATH = f"{HOME}/Documents/MacTrader/SkyeFX/SkyEngine/assets/skyefx_logo.png"
@@ -210,24 +219,36 @@ if __name__ == "__main__":
     log_data = read_log_file(LOG_FILE_PATH)
     filtered_log_text = extract_filtered_logs(log_data)
     prompt = create_prompt_from_log(filtered_log_text)
-    pyperclip.copy(prompt)
-    print(f"This is the generated prompt\n\n{prompt}\n\n")
-    # run_chatgpt_blog_prompt(prompt=prompt)
-    # generate_basket_pips_chart(LOG_FILE_PATH,GRAPH_IMG_PATH)
-    # time.sleep(3)
-    # slice_image_for_instagram(GRAPH_IMG_PATH,INSTA_IMG_PATH)
-    # for_insta_cover = prepare_instagram_summary(filtered_log_text)
-    # print((for_insta_cover))
-    # generate_instagram_cover(
-    #     for_insta_cover['output_path'],
-    #     for_insta_cover['title'],
-    #     for_insta_cover['total_pips'],
-    #     for_insta_cover['top_performers'],
-    #     for_insta_cover['logo_path']
-    # )
-    # output = generate_post(prompt)
-    # saved_path = save_to_markdown(output, save_dir=SAVE_DIRECTORY)
+    # pyperclip.copy(prompt)
+    # print(f"This is the generated prompt\n\n{prompt}\n\n")
+    # all_md_links =["blog_post.md", "twitter_caption.md","instagram_caption.md"]
+    # driver = create_driver()
+    # try:
+    #     # 2. Submit prompt
+    #     run_chatgpt_blog_prompt(prompt, driver, wait_time=60)
+    #     # 3. Click the 3 markdown download links
+    #     click_markdown_links(driver, all_md_links)
+    #     # 4. Move files to blog folder
+    #     # move_latest_markdown()
 
+    # finally:
+    #     driver.quit()
+    date_str = datetime.now().strftime("%Y-%m-%d")
+    update_markdown_file(f"{HOME}/Downloads/blog_post.md")
+    rename_and_move_blog_file(f"{HOME}/Downloads/",BLOG_COMPLETED_DIRECTORY)
+    generate_basket_pips_chart(LOG_FILE_PATH,GRAPH_IMG_PATH)
+    time.sleep(3)
+    slice_image_for_instagram(GRAPH_IMG_PATH,INSTA_IMG_PATH)
+    for_insta_cover = prepare_instagram_summary(filtered_log_text)
+    print((for_insta_cover))
+    generate_instagram_cover(
+        for_insta_cover['output_path'],
+        for_insta_cover['title'],
+        for_insta_cover['total_pips'],
+        for_insta_cover['top_performers'],
+        for_insta_cover['logo_path']
+    )
+    git_commit_and_push(BLOG_DIRECTORY,[f"{BLOG_COMPLETED_DIRECTORY}/trade_summary_{date_str}.md",GRAPH_IMG_PATH])
     # print(f"✅ Summary saved to: {saved_path}")
     # if notify_slack(saved_path):
     #     print("📨 Slack notification sent.")

@@ -109,8 +109,6 @@ def format_markdown(content):
     content_body = inject_chart_image(content_body, date_str)
     return f"---\n{yaml_block}---\n\n{content_body}"
 
-
-
 def update_markdown_file(path):
     path = Path(path)
     if not path.exists() or not path.suffix == ".md":
@@ -151,7 +149,3 @@ def inject_chart_image(content_body: str, date_str: str) -> str:
     else:
         print("⚠️  Injection point not found — skipping image injection.")
         return content_body
-
-
-
-# update_markdown_file(md_file)

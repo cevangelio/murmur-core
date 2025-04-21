@@ -1,20 +1,25 @@
-import os
 import subprocess
-from datetime import datetime
+import os
+import datetime
 
-def save_post(markdown, output_dir):
-    date = datetime.utcnow().strftime("%Y-%m-%d")
-    filename = f"{date}-murmur-post.md"
-    filepath = os.path.join(output_dir, filename)
-    with open(filepath, "w") as f:
-        f.write(markdown)
+def git_commit_and_push(repo_dir, files, date_str=None):
+    """
+    Adds, commits, and pushes a list of files to the repo.
+    """
+    repo_dir = os.path.expanduser(repo_dir)
+    os.chdir(repo_dir)
 
-    # Git add, commit, and optionally push
+    if date_str is None:
+        date_str = datetime.datetime.now().strftime("%Y-%m-%d")
+
     try:
-        subprocess.run(["git", "add", filepath], cwd=output_dir, check=True)
-        subprocess.run(["git", "commit", "-m", f"chore: add post for {date}"], cwd=output_dir, check=True)
-        # subprocess.run(["git", "push"], cwd=output_dir, check=True)  # Uncomment to auto-push
-    except subprocess.CalledProcessError as e:
-        print(f"Git operation failed: {e}")
+        for file in files:
+            file_path = os.path.expanduser(file)
+            subprocess.run(["git", "add", file_path], check=True)
 
-    return filepath
+        commit_message = f"New blog {date_str}"
+        subprocess.run(["git", "commit", "-m", commit_message], check=True)
+        subprocess.run(["git", "push", "origin", "main"], check=True)
+        print(f"✅ Pushed files to repo: {files}")
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Git command failed: {e}")

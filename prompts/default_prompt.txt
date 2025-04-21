@@ -1,9 +1,0 @@
-Write a blog post based on the following logs and calendar events:
-
----
-
-{{LOGS}}
-
----
-
-Make it coherent, engaging, and appropriate for publication on a personal blog.

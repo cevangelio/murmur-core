@@ -139,7 +139,7 @@ def generate_instagram_cover(output_path, title, total_pips, top_pairs, logo_pat
     draw.text((60, 200), title, font=title_font, fill="white")
 
     # Total gain
-    draw.text((60, 320), f"Total Gain: {total_pips} pips", font=pips_font, fill="#00FF88")
+    draw.text((60, 320), f"Day High: {total_pips} pips", font=pips_font, fill="#00FF88")
 
     # Top pairs list
     y = 520
