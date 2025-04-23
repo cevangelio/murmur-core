@@ -219,20 +219,15 @@ if __name__ == "__main__":
     log_data = read_log_file(LOG_FILE_PATH)
     filtered_log_text = extract_filtered_logs(log_data)
     prompt = create_prompt_from_log(filtered_log_text)
-    # pyperclip.copy(prompt)
-    # print(f"This is the generated prompt\n\n{prompt}\n\n")
-    # all_md_links =["blog_post.md", "twitter_caption.md","instagram_caption.md"]
-    # driver = create_driver()
-    # try:
-    #     # 2. Submit prompt
-    #     run_chatgpt_blog_prompt(prompt, driver, wait_time=60)
-    #     # 3. Click the 3 markdown download links
-    #     click_markdown_links(driver, all_md_links)
-    #     # 4. Move files to blog folder
-    #     # move_latest_markdown()
-
-    # finally:
-    #     driver.quit()
+    pyperclip.copy(prompt)
+    print(f"This is the generated prompt\n\n{prompt}\n\n")
+    all_md_links =["blog_post.md", "twitter_caption.md","instagram_caption.md"]
+    driver = create_driver()
+    try:
+        run_chatgpt_blog_prompt(prompt, driver, wait_time=60)
+        click_markdown_links(driver, all_md_links)
+    finally:
+        driver.quit()
     date_str = datetime.now().strftime("%Y-%m-%d")
     update_markdown_file(f"{HOME}/Downloads/blog_post.md")
     rename_and_move_blog_file(f"{HOME}/Downloads/",BLOG_COMPLETED_DIRECTORY)
@@ -249,8 +244,3 @@ if __name__ == "__main__":
         for_insta_cover['logo_path']
     )
     git_commit_and_push(BLOG_DIRECTORY,[f"{BLOG_COMPLETED_DIRECTORY}/trade_summary_{date_str}.md",GRAPH_IMG_PATH])
-    # print(f"✅ Summary saved to: {saved_path}")
-    # if notify_slack(saved_path):
-    #     print("📨 Slack notification sent.")
-    # else:
-    #     print("❌ Failed to send Slack notification.")
