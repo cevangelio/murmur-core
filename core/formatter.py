@@ -79,18 +79,7 @@ def format_markdown(content):
         tags = ["forex", "skyengine", "analysis", "algotrading"]
 
     # Description
-    description = existing.get("description")
-    if not description or len(description.strip()) < 30:
-        desc_lines = []
-        for line in content_body.splitlines()[1:]:
-            if line.strip() == "" or line.lower().startswith("tags:"):
-                continue
-            desc_lines.append(line.strip())
-            if len(desc_lines) >= 2:
-                break
-        description = " ".join(desc_lines).strip()
-        if not description or not isinstance(description, str) or len(description.strip()) < 30:
-            description = "A summary of daily trading performance based on forex snapshot logs."
+    description = content.split("\n")[9].split(":")[1].strip()
 
     frontmatter_dict = {
         "author": existing.get("author", "Amber"),
