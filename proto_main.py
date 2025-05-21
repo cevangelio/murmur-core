@@ -34,6 +34,7 @@ BLOG_COMPLETED_DIRECTORY = f"{BLOG_DIRECTORY}/src/data/blog/"
 GRAPH_IMG_PATH = f"{BASKET_PIPS_DIRECTORY}/pips_chart_{BLOG_ID}.png"
 INSTA_IMG_PATH = f"{HOME}/Downloads/instaskyengine/"
 LOGO_PATH = f"{HOME}/Documents/MacTrader/SkyeFX/SkyEngine/assets/skyefx_logo.png"
+MARKDOWN_BLOG_FILE = f"{HOME}/Downloads/blog_post.md"
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
@@ -207,6 +208,13 @@ def save_to_markdown(content, save_dir="/your/custom/path/here"):
         f.write(formatted)
     return filepath
 
+def delete_old_md_file(file_path):
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        print("File deleted.")
+    else:
+        print("File does not exist.")
+
 def notify_slack(filepath):
     filename = os.path.basename(filepath)
     payload = {
@@ -221,7 +229,9 @@ if __name__ == "__main__":
     prompt = create_prompt_from_log(filtered_log_text)
     pyperclip.copy(prompt)
     print(f"This is the generated prompt\n\n{prompt}\n\n")
+    delete_old_md_file(MARKDOWN_BLOG_FILE)
     all_md_links =["blog_post.md", "twitter_caption.md","instagram_caption.md"]
+    all_md_links =["blog_post.md"]
     driver = create_driver()
     try:
         run_chatgpt_blog_prompt(prompt, driver, wait_time=60)
@@ -229,18 +239,18 @@ if __name__ == "__main__":
     finally:
         driver.quit()
     date_str = datetime.now().strftime("%Y-%m-%d")
-    update_markdown_file(f"{HOME}/Downloads/blog_post.md")
+    update_markdown_file(MARKDOWN_BLOG_FILE)
     rename_and_move_blog_file(f"{HOME}/Downloads/",BLOG_COMPLETED_DIRECTORY)
     generate_basket_pips_chart(LOG_FILE_PATH,GRAPH_IMG_PATH)
     time.sleep(3)
-    slice_image_for_instagram(GRAPH_IMG_PATH,INSTA_IMG_PATH)
-    for_insta_cover = prepare_instagram_summary(filtered_log_text)
-    print((for_insta_cover))
-    generate_instagram_cover(
-        for_insta_cover['output_path'],
-        for_insta_cover['title'],
-        for_insta_cover['total_pips'],
-        for_insta_cover['top_performers'],
-        for_insta_cover['logo_path']
-    )
+    # slice_image_for_instagram(GRAPH_IMG_PATH,INSTA_IMG_PATH)
+    # for_insta_cover = prepare_instagram_summary(filtered_log_text)
+    # print((for_insta_cover))
+    # generate_instagram_cover(
+    #     for_insta_cover['output_path'],
+    #     for_insta_cover['title'],
+    #     for_insta_cover['total_pips'],
+    #     for_insta_cover['top_performers'],
+    #     for_insta_cover['logo_path']
+    # )
     git_commit_and_push(BLOG_DIRECTORY,[f"{BLOG_COMPLETED_DIRECTORY}/trade_summary_{date_str}.md",GRAPH_IMG_PATH])

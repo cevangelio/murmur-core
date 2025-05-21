@@ -79,8 +79,11 @@ def format_markdown(content):
         tags = ["forex", "skyengine", "analysis", "algotrading"]
 
     # Description
-    description = content.split("\n")[9].split(":")[1].strip()
-
+    try:
+        description = content.split("\n")[9].split(":")[1].strip()
+    except:
+        description = ""
+        
     frontmatter_dict = {
         "author": existing.get("author", "Amber"),
         "pubDatetime": pub_datetime,

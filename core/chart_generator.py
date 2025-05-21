@@ -9,7 +9,9 @@ from datetime import datetime, timedelta
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 mpl.rcParams['font.family'] = 'JetBrains Mono'
+HOME = str(Path.home())
 BLOG_ID = (datetime.now()-timedelta(days=1)).strftime('%B %d, %Y')
+LOGO_PATH = f"{HOME}/Documents/MacTrader/SkyeFX/SkyEngine/assets/skyefx_logo.png"
 
 def generate_basket_pips_chart(log_file_path, output_image_path):
     with open(log_file_path) as f:
@@ -156,6 +158,58 @@ def generate_instagram_cover(output_path, title, total_pips, top_pairs, logo_pat
         logo.thumbnail(max_logo_size, Image.LANCZOS)
 
         # Paste in bottom-right with padding
+        logo_x = img.width - logo.width - 40
+        logo_y = img.height - logo.height - 40
+        img.paste(logo, (logo_x, logo_y), mask=logo)
+
+    # Save image
+    output_path = Path(output_path)
+    img.save(output_path)
+    print(f"✅ Saved Instagram cover: {output_path}")
+
+def generate_generic_instagram_cover(output_path, main_title, sub_title, logo_path=None):
+    # Create base image
+    img = Image.new("RGB", (1080, 1080), color="#0f0f0f")
+    draw = ImageDraw.Draw(img)
+
+    # Load fonts
+    try:
+        main_font = ImageFont.truetype("JetBrainsMono-Bold.ttf", 90)
+        sub_font = ImageFont.truetype("JetBrainsMono-Regular.ttf", 55)
+    except:
+        main_font = ImageFont.load_default()
+        sub_font = ImageFont.load_default()
+
+    # Helper: manually break text after N characters
+    def draw_manual_break(draw, text, font, start_y, fill, max_chars=25, line_spacing=10):
+        lines = []
+        while len(text) > max_chars:
+            # Find nearest space before max_chars
+            break_pos = text.rfind(' ', 0, max_chars)
+            if break_pos == -1:
+                break_pos = max_chars
+            lines.append(text[:break_pos])
+            text = text[break_pos:].lstrip()
+        lines.append(text)
+
+        y = start_y
+        for line in lines:
+            draw.text((60, y), line, font=font, fill=fill)
+            y += 90 + line_spacing  # vertical spacing after each line
+
+    # Draw main title (white, bigger)
+    # draw_manual_break(draw, main_title, main_font, start_y=200, fill="white", max_chars=25)
+    draw.text((60, 200), main_title, font=main_font, fill="white")
+
+    # Draw sub title (green, smaller)
+    draw_manual_break(draw, sub_title, sub_font, start_y=540, fill="#00FF88", max_chars=40)
+
+    # Optional logo overlay
+    if logo_path and Path(logo_path).exists():
+        logo = Image.open(logo_path).convert("RGBA")
+        max_logo_size = (150, 150)
+        logo.thumbnail(max_logo_size, Image.LANCZOS)
+
         logo_x = img.width - logo.width - 40
         logo_y = img.height - logo.height - 40
         img.paste(logo, (logo_x, logo_y), mask=logo)

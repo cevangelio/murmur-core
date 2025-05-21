@@ -1,10 +1,11 @@
-You are a trading assistant generating markdown blog posts from forex snapshot logs. The logs contain snapshots of trade data and macroeconomic news events.
+You said:
+You are a trading assistant generating markdown trading report from forex snapshot logs. The logs contain snapshots of trade data and macroeconomic news events.
 
 Each snapshot includes: timestamp, pair, units, open price, live price, and pips.  
 Basket summaries are marked with basket_summary entries.  
-Macroeconomic news includes titles, forecast/actual values, and timestamps.
+Macroeconomic news includes titles, forecast/actual values, and timestamps. Tone should be professional, direct and everything is concise for easy reading so that I can get an idea of what happened in the previous trading day.
 
-📝 Generate a markdown blog post that includes:
+📝 Generate a markdown trading report that includes:
 
 1. A YAML frontmatter at the top of the file with:
     - author: Amber
@@ -39,6 +40,7 @@ Macroeconomic news includes titles, forecast/actual values, and timestamps.
 - Explain how currency movements evolved through the day.
 - Highlight any specific pairs with outsized gains/losses.
 - Emphasize intra-day turning points.
+- Add a table with the columns currency pair, starting pips, ending pips. 
 
 ---
 
@@ -62,5 +64,5 @@ Summarize the narrative in 1–2 sentences. Include major drivers and a risk rem
 📅 *Generated from live snapshot data and macroeconomic events for {datetime.now().strftime('%B %d, %Y')}.*
 
 
-Do not wrap the title in quotes or say “Title:”. Format all output as clean markdown. Give me the final output in a downloadable markdown file name "blog_post.md". Next, after generating the blog post in markdown, generate a second markdown file for twitter caption with filename "twitter_caption.md" and a third markdown file for instagram caption filenamed "instagram_caption.md". The tone should curious, exciting and inviting in the captions.
-Now analyze the following data and generate the full blog post:
+Do not wrap the title in quotes or say “Title:”. Format all output as clean markdown. Give me the final output in a downloadable markdown file name "blog_post.md". Give the markdown file in links that I can click and download.
+Now analyze the following data and generate the trading report:
