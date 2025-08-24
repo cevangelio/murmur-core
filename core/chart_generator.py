@@ -35,6 +35,9 @@ def generate_basket_pips_chart(log_file_path, output_image_path):
     else:
         news_df = pd.DataFrame(columns=['timestamp', 'title'])
 
+    # Ensure no duplicate events
+    news_df = news_df.drop_duplicates(subset=["timestamp", "title"])
+
     # Assign a unique color per event type
     unique_events = news_df['title'].unique()
     event_colors = plt.cm.tab10.colors[:len(unique_events)]
@@ -46,7 +49,11 @@ def generate_basket_pips_chart(log_file_path, output_image_path):
 
     # Plot news lines
     for _, row in news_df.iterrows():
-        ax.axvline(row['timestamp'], color=color_map[row['title']], linestyle=':', linewidth=1.2, alpha=0.9)
+        if row['title'] in color_map:
+            ax.axvline(row['timestamp'], color=color_map[row['title']], linestyle=':', linewidth=1.2, alpha=0.9)
+        else:
+            print(f"Missing color for event: {row['title']}")
+
 
     # Highlight highest and lowest points
     max_idx = basket_pips_15min['pips'].idxmax()
@@ -83,7 +90,9 @@ def generate_basket_pips_chart(log_file_path, output_image_path):
     ax.xaxis.set_major_formatter(DateFormatter("%I:%M %p"))
 
     # Legend setup for news events
-    handles = [mlines.Line2D([], [], color=color_map[title], linestyle=':', label=title) for title in unique_events]
+    handles = [
+    mlines.Line2D([], [], color=color_map[title], linestyle=':', label=title)
+    for title in unique_events if title in color_map]
     ax.legend(handles=handles, loc='lower left', fontsize=8, title="News Events")
 
     ax.set_title(f"Total Basket Pips | {BLOG_ID}")
@@ -198,7 +207,6 @@ def generate_generic_instagram_cover(output_path, main_title, sub_title, logo_pa
             y += 90 + line_spacing  # vertical spacing after each line
 
     # Draw main title (white, bigger)
-    # draw_manual_break(draw, main_title, main_font, start_y=200, fill="white", max_chars=25)
     draw.text((60, 200), main_title, font=main_font, fill="white")
 
     # Draw sub title (green, smaller)

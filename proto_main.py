@@ -16,15 +16,17 @@ import ast
 from core.browser_automation import (
     create_driver,
     run_chatgpt_blog_prompt,
-    click_markdown_links,
-    move_latest_markdown,
-)
+    click_markdown_links, 
+    extract_last_fenced_markdown,
+    extract_last_response_markdown
+    )
+from typing import List, Dict
 
 load_dotenv()
 HOME = str(Path.home())
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 SLACK_WEBHOOK_URL = os.getenv("SLACK_WEBHOOK")
-BLOG_ID = (datetime.now()-timedelta(days=1)).strftime('%Y-%m-%d')
+BLOG_ID = (datetime.now()-timedelta(days=2)).strftime('%Y-%m-%d')
 LOG_FILE_PATH = f"{HOME}/Documents/MacTrader/SkyeFX/SkyEngine/logs/blog_logs_{BLOG_ID}.log"
 SAVE_DIRECTORY = f"{HOME}/Documents/MacTrader/Murmur/Core/proto_blogs/"
 DAILY_SNAPSHOT_PROMPT = f"{HOME}/Documents/MacTrader/Murmur/Core/prompts/daily_snapshot_prompt.txt"
@@ -61,7 +63,7 @@ def generate_post(prompt):
 def read_log_file(filepath):
     with open(filepath, 'r') as file:
         return [json.loads(line) for line in file if line.strip()]
-
+    
 def extract_filtered_logs(logs):
     snapshots = [log for log in logs if log["type"] == "snapshot"]
     news_events = []
@@ -192,8 +194,6 @@ def prepare_instagram_summary(logs):
         "logo_path": LOGO_PATH
     }
 
-
-
 def create_prompt_from_log(log_data):
     with open(DAILY_SNAPSHOT_PROMPT, "r") as file:
         prompt_raw = file.read()
@@ -229,28 +229,41 @@ if __name__ == "__main__":
     prompt = create_prompt_from_log(filtered_log_text)
     pyperclip.copy(prompt)
     print(f"This is the generated prompt\n\n{prompt}\n\n")
-    delete_old_md_file(MARKDOWN_BLOG_FILE)
-    all_md_links =["blog_post.md", "twitter_caption.md","instagram_caption.md"]
-    all_md_links =["blog_post.md"]
-    driver = create_driver()
+    print(len(prompt))
+
+    driver = create_driver(
+        profile_mode="clone",
+        use_brave=True,
+        profile_directory="Default",
+        headless=False
+    )
     try:
-        run_chatgpt_blog_prompt(prompt, driver, wait_time=60)
-        click_markdown_links(driver, all_md_links)
+        PROJECT_URL = "https://chatgpt.com/g/g-p-67ea53558d1c81918dedc2e3043c087a-project-murmur/project"
+        date_str = datetime.now().strftime("%Y-%m-%d")
+
+        run_chatgpt_blog_prompt(prompt, driver, wait_time=60, project_url=PROJECT_URL)
+        content = extract_last_response_markdown(driver, wait_seconds=60)
+        print(f'\n\nThis is the content\n\n{content}\n\n')
+
+        # Save -> format -> move
+        md_filepath = save_to_markdown(content, SAVE_DIRECTORY)
+        update_markdown_file(md_filepath)
+        moved_path = rename_and_move_blog_file(
+            SAVE_DIRECTORY,                # <-- source dir (not Downloads anymore)
+            BLOG_COMPLETED_DIRECTORY,      # <-- destination
+            "trade_summary",               # base name
+            date_str                       # use the same date string you're committing with
+        )
+        if not moved_path:
+            raise RuntimeError("Could not move markdown file; nothing matched in SAVE_DIRECTORY.")
+
+        # Charts + git + slack
+        generate_basket_pips_chart(LOG_FILE_PATH, GRAPH_IMG_PATH)
+        time.sleep(3)
+        git_commit_and_push(
+            BLOG_DIRECTORY,
+            [f"{BLOG_COMPLETED_DIRECTORY}/trade_summary_{date_str}.md", GRAPH_IMG_PATH]
+        )
+        notify_slack(f"{BLOG_COMPLETED_DIRECTORY}/trade_summary_{date_str}.md")
     finally:
         driver.quit()
-    date_str = datetime.now().strftime("%Y-%m-%d")
-    update_markdown_file(MARKDOWN_BLOG_FILE)
-    rename_and_move_blog_file(f"{HOME}/Downloads/",BLOG_COMPLETED_DIRECTORY)
-    generate_basket_pips_chart(LOG_FILE_PATH,GRAPH_IMG_PATH)
-    time.sleep(3)
-    # slice_image_for_instagram(GRAPH_IMG_PATH,INSTA_IMG_PATH)
-    # for_insta_cover = prepare_instagram_summary(filtered_log_text)
-    # print((for_insta_cover))
-    # generate_instagram_cover(
-    #     for_insta_cover['output_path'],
-    #     for_insta_cover['title'],
-    #     for_insta_cover['total_pips'],
-    #     for_insta_cover['top_performers'],
-    #     for_insta_cover['logo_path']
-    # )
-    git_commit_and_push(BLOG_DIRECTORY,[f"{BLOG_COMPLETED_DIRECTORY}/trade_summary_{date_str}.md",GRAPH_IMG_PATH])

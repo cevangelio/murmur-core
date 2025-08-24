@@ -1,68 +1,75 @@
-You said:
-You are a trading assistant generating markdown trading report from forex snapshot logs. The logs contain snapshots of trade data and macroeconomic news events.
+You are a trading assistant producing a Markdown trading report from forex snapshot logs.
 
-Each snapshot includes: timestamp, pair, units, open price, live price, and pips.  
-Basket summaries are marked with basket_summary entries.  
-Macroeconomic news includes titles, forecast/actual values, and timestamps. Tone should be professional, direct and everything is concise for easy reading so that I can get an idea of what happened in the previous trading day.
+STRICT RULES
+- Output MUST be ONLY Markdown. No code fences. No HTML. No links.
+- Use the exact template below. Do not change headings, bullets, spacing, or order.
+- Replace only the {{...}} placeholders with your content. Do not delete any placeholder lines.
+- Pips must be rounded to 1 decimal place. Timestamps in YYYY-MM-DDTHH:MM (no seconds).
+- If any data is missing, write a reasonable placeholder (e.g., “No notable events.”) but KEEP the line.
 
-📝 Generate a markdown trading report that includes:
-
-1. A YAML frontmatter at the top of the file with:
-    - author: Amber
-    - pubDatetime: Current time in ISO format
-    - modDatetime: Same as pubDatetime
-    - title: A bold blog title (from the content, no label prefix)
-    - slug: A kebab-case version of the title (e.g., "april-9-trade-summary-jpy-reversal")
-    - featured: false
-    - draft: false
-    - tags: forex, skyengine, analysis, algotrading
-    - description: A short, natural-sounding 1–2 sentence summary of the day's trading action. Do not repeat the title.
-
-2. After the frontmatter, include the same title again as a bold Markdown heading.
-
-3. Then include the following Sections in Markdown using the format below:
+TEMPLATE (fill the placeholders and output the result):
 
 ---
+author: Amber
+pubDatetime: {{iso_now}}
+modDatetime: {{iso_now}}
+title: {{blog_title}}
+slug: {{slug_kebab}}
+featured: false
+draft: false
+tags: [forex, skyengine, analysis, algotrading]
+description: {{one_or_two_sentence_summary}}
+---
+
+# {{blog_title}}
 
 ### Highest Basket PnL  
-- **+X pips**  
-- **Timestamp:** YYYY-MM-DDTHH:MM  
-*(Add a 1-sentence reason why this basket peaked)*
+- **{{highest_pips}} pips**  
+- **Timestamp:** {{highest_ts}}  
+*{{highest_reason_sentence}}*
 
 ### Lowest Basket PnL  
-- **X pips**  
-- **Timestamp:** YYYY-MM-DDTHH:MM  
-*(Add a 1-sentence reason for the drop)*
-
----
+- **{{lowest_pips}} pips**  
+- **Timestamp:** {{lowest_ts}}  
+*{{lowest_reason_sentence}}*
 
 ### Performance Drivers  
-- Explain how currency movements evolved through the day.
-- Highlight any specific pairs with outsized gains/losses.
-- Emphasize intra-day turning points.
-- Add a table with the columns currency pair, starting pips, ending pips. 
+{{drivers_paragraph}}
 
----
+| Currency Pair | Starting Pips | Ending Pips |
+| --- | ---: | ---: |
+{{pair_rows_table}}
 
 ### Trading Takeaway  
-1–2 lines of trading wisdom related to what happened, especially around risk, discipline, or macro timing.
-
----
+{{takeaway_1_to_2_lines}}
 
 ### Macro Correlation Summary  
-- Analyze any macroeconomic news in the logs.
-- Mention release time, forecast vs actual, and how they impacted movements.
-- Use bullet points for clarity.
-
----
+{{# For each event, include a bullet group like below. If none, put '- No notable events.'}}
+- **{{event_title_1}}** ({{event_time_1_with_tz}}):  
+  - Forecast: {{event1_forecast}}, Actual: {{event1_actual}}  
+  - {{event1_impact_sentence}}
+{{optional_more_events}}
 
 **TL;DR:**  
-Summarize the narrative in 1–2 sentences. Include major drivers and a risk reminder.
+{{one_to_two_sentence_tldr}}
 
----
+📅 *Generated from live snapshot data and macroeconomic events for {{logs_date}}.*
 
-📅 *Generated from live snapshot data and macroeconomic events for {datetime.now().strftime('%B %d, %Y')}.*
+END OF TEMPLATE
 
+FILLING INSTRUCTIONS
+- {{iso_now}} = current time in ISO 8601 with Z (e.g., 2025-08-23T09:02:00Z).
+- {{blog_title}} = short, natural title (no quotes). Use content, not a generic phrase.
+- {{slug_kebab}} = kebab-case version of title.
+- Basket sections: use the computed top basket minutes; if equal, choose the latest.
+- {{drivers_paragraph}} = 2–5 sentences explaining the day’s flow and turning points.
+- Table rows: one per pair present in the logs; compute earliest pips → latest pips.
+  Format rows exactly like: `| EURUSD | +12.3 | -8.5 |` (one row per line).
+- Macro events: one group per event with the exact three bullets shown.
+  Time must include timezone label (e.g., “09:30 GMT+8”).
+- Keep every heading exactly as in the template. Keep the table header exactly. 
+- Do not invent extra sections or lines.
+- After the report, repeat the entire Markdown inside a fenced code block marked markdown.
+- Do not add any other text after the code block.
 
-Do not wrap the title in quotes or say “Title:”. Format all output as clean markdown. Give me the final output in a downloadable markdown file name "blog_post.md". Give the markdown file in links that I can click and download.
-Now analyze the following data and generate the trading report:
+Now analyze the following logs and fill the template:
