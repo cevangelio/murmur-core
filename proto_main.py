@@ -1,6 +1,7 @@
 import os
 import json
 import requests
+import re
 import pyperclip
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
@@ -25,8 +26,8 @@ from typing import List, Dict
 load_dotenv()
 HOME = str(Path.home())
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-SLACK_WEBHOOK_URL = os.getenv("SLACK_WEBHOOK")
-BLOG_ID = (datetime.now()-timedelta(days=2)).strftime('%Y-%m-%d')
+SLACK_WEBHOOK_URL = os.getenv("SLACK_WEBHOOK_URL")
+BLOG_ID = (datetime.now()-timedelta(days=1)).strftime('%Y-%m-%d')
 LOG_FILE_PATH = f"{HOME}/Documents/MacTrader/SkyeFX/SkyEngine/logs/blog_logs_{BLOG_ID}.log"
 SAVE_DIRECTORY = f"{HOME}/Documents/MacTrader/Murmur/Core/proto_blogs/"
 DAILY_SNAPSHOT_PROMPT = f"{HOME}/Documents/MacTrader/Murmur/Core/prompts/daily_snapshot_prompt.txt"
@@ -215,10 +216,38 @@ def delete_old_md_file(file_path):
     else:
         print("File does not exist.")
 
+def read_slug_from_markdown(md_path: str) -> str:
+    """
+    Return the 'slug' from a markdown file's YAML frontmatter.
+    Assumes frontmatter is the very first block, delimited by '---' lines.
+    Returns '' if not found.
+    """
+    p = Path(md_path)
+    if not p.exists() or p.suffix.lower() != ".md":
+        print(f"⚠️  Not a markdown file or does not exist: {md_path}")
+        return ""
+    text = p.read_text(encoding="utf-8", errors="ignore")
+    # Grab the first frontmatter block at the top
+    m = re.match(r"^---\n(.*?)\n---\n", text, flags=re.DOTALL)
+    if not m:
+        return ""
+    fm_block = m.group(1)
+    # Fast path: simple regex for slug: <value> (no YAML import needed)
+    m_slug = re.search(r"(?m)^\s*slug\s*:\s*(.+?)\s*$", fm_block)
+    if not m_slug:
+        return ""
+    raw = m_slug.group(1).strip()
+    # Remove surrounding quotes if present
+    if (raw.startswith("'") and raw.endswith("'")) or (raw.startswith('"') and raw.endswith('"')):
+        raw = raw[1:-1].strip()
+    return raw
+
 def notify_slack(filepath):
     filename = os.path.basename(filepath)
+    slug_raw = read_slug_from_markdown(filename)
+    blog_url = f"https://skye-engines.netlify.app/posts/{slug_raw}"
     payload = {
-        "text": f":memo: *New Trade Summary Generated!* `{filename}` has been saved.\nLocation: `{filepath}`"
+        "text": f":memo: *New Trade Summary Generated!* Check it out below.\n\n{blog_url}"
     }
     response = requests.post(SLACK_WEBHOOK_URL, json=payload)
     return response.status_code == 200
